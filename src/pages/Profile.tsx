@@ -52,9 +52,14 @@ const Profile = () => {
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center space-y-4">
             <div className="animate-spin h-8 w-8 mx-auto rounded-full border-2 border-trading-primary border-t-transparent" />
-            <p className="text-muted-foreground">Redirecting to your profile...</p>
+            <p className="text-muted-foreground">
+              Redirecting to your profile...
+            </p>
           </div>
         </div>
       </main>
     </div>
   );
+};
+
+export default Profile;
