@@ -135,13 +135,6 @@ export const markAllNotificationsAsRead = (userId?: string): void => {
   });
 };
 
-  notifications.forEach((notif) => {
-    if (notif.userId === targetUserId) {
-      notif.isRead = true;
-    }
-  });
-};
-
 // Initialize storage - clean start
 export const initializeStorage = (): void => {
   // Just ensure storage is ready, no pre-populated data
