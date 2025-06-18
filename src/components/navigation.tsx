@@ -221,7 +221,3 @@ export function Navigation() {
     </nav>
   );
 }
-      </div>
-    </nav>
-  );
-}
