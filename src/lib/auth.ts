@@ -1,98 +1,8 @@
 import { User } from "./types";
-import {
-  getSharedUsers,
-  addSharedUser,
-  isSharedUsernameAvailable,
-  isSharedEmailAvailable,
-  findSharedUser,
-  updateSharedUser,
-  migratePersonalUsersToShared,
-} from "./shared-storage";
+import { authAPI, usersAPI, initializeAPI } from "./api";
 
-// Simple hash function for demo purposes (in production, use bcrypt or similar)
-function simpleHash(password: string): string {
-  let hash = 0;
-  for (let i = 0; i < password.length; i++) {
-    const char = password.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash = hash & hash; // Convert to 32-bit integer
-  }
-  return hash.toString(16);
-}
-
-interface StoredUser {
-  id: string;
-  username: string;
-  displayName: string;
-  email: string;
-  passwordHash: string;
-  avatar: string;
-  robloxId: string;
-  joinDate: Date;
-  isOnline: boolean;
-  stats: {
-    totalTrades: number;
-    successfulTrades: number;
-    rating: number;
-    totalReviews: number;
-  };
-}
-
-// LocalStorage keys
-const USERS_STORAGE_KEY = "tradehub_users";
-const CURRENT_USER_STORAGE_KEY = "tradehub_current_user";
-
-// Get users from localStorage
-function getStoredUsers(): StoredUser[] {
-  try {
-    const stored = localStorage.getItem(USERS_STORAGE_KEY);
-    if (stored) {
-      return JSON.parse(stored).map((user: any) => ({
-        ...user,
-        joinDate: new Date(user.joinDate),
-      }));
-    }
-  } catch (error) {
-    console.error("Error loading users from localStorage:", error);
-  }
-  return [];
-}
-
-// Save users to localStorage
-function saveUsers(users: StoredUser[]): void {
-  try {
-    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
-  } catch (error) {
-    console.error("Error saving users to localStorage:", error);
-  }
-}
-
-// Get current user ID from localStorage
-function getCurrentUserId(): string | null {
-  try {
-    return localStorage.getItem(CURRENT_USER_STORAGE_KEY);
-  } catch (error) {
-    console.error("Error loading current user from localStorage:", error);
-    return null;
-  }
-}
-
-// Save current user ID to localStorage
-function setCurrentUserId(userId: string | null): void {
-  try {
-    if (userId) {
-      localStorage.setItem(CURRENT_USER_STORAGE_KEY, userId);
-    } else {
-      localStorage.removeItem(CURRENT_USER_STORAGE_KEY);
-    }
-  } catch (error) {
-    console.error("Error saving current user to localStorage:", error);
-  }
-}
-
-// Initialize from localStorage
-let users: StoredUser[] = getStoredUsers();
-let currentUserId: string | null = getCurrentUserId();
+// Cache for current user to avoid repeated API calls
+let currentUserCache: User | null = null;
 
 export interface RegisterData {
   username: string;
@@ -113,228 +23,196 @@ export interface AuthResult {
   user?: User;
 }
 
-// Check if username is available (uses shared storage)
+// Check if username is available (placeholder - validation now happens on server)
 export function isUsernameAvailable(username: string): boolean {
-  return isSharedUsernameAvailable(username);
+  // This is now handled server-side during registration
+  return true;
 }
 
-// Check if email is available (uses shared storage)
+// Check if email is available (placeholder - validation now happens on server)
 export function isEmailAvailable(email: string): boolean {
-  return isSharedEmailAvailable(email);
+  // This is now handled server-side during registration
+  return true;
 }
 
 // Register a new user
-export function registerUser(data: RegisterData): AuthResult {
-  // Validate input
-  if (!data.username || data.username.length < 3) {
+export async function registerUser(data: RegisterData): Promise<AuthResult> {
+  try {
+    const response = await authAPI.register(data);
+
+    if (response.success && response.user) {
+      // Convert response dates to Date objects
+      const user: User = {
+        ...response.user,
+        joinDate: new Date(response.user.joinDate),
+      };
+
+      // Cache the user
+      currentUserCache = user;
+
+      return {
+        success: true,
+        message: response.message,
+        user,
+      };
+    }
+
     return {
       success: false,
-      message: "Username must be at least 3 characters long",
+      message: response.message,
     };
-  }
-
-  if (!data.displayName || data.displayName.length < 2) {
+  } catch (error) {
+    console.error("Registration error:", error);
     return {
       success: false,
-      message: "Display name must be at least 2 characters long",
+      message: error instanceof Error ? error.message : "Registration failed",
     };
   }
-
-  if (!data.email || !data.email.includes("@")) {
-    return { success: false, message: "Please enter a valid email address" };
-  }
-
-  if (!data.password || data.password.length < 6) {
-    return {
-      success: false,
-      message: "Password must be at least 6 characters long",
-    };
-  }
-
-  if (data.password !== data.confirmPassword) {
-    return { success: false, message: "Passwords do not match" };
-  }
-
-  // Check if username is taken
-  if (!isUsernameAvailable(data.username)) {
-    return { success: false, message: "Username is already taken" };
-  }
-
-  // Check if email is taken
-  if (!isEmailAvailable(data.email)) {
-    return { success: false, message: "Email is already registered" };
-  }
-
-  // Create new user
-  const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  const passwordHash = simpleHash(data.password);
-
-  const newUser: StoredUser = {
-    id: userId,
-    username: data.username,
-    displayName: data.displayName,
-    email: data.email,
-    passwordHash,
-    avatar: `/placeholder.svg`,
-    robloxId: `roblox_${userId}`,
-    joinDate: new Date(),
-    isOnline: true,
-    stats: {
-      totalTrades: 0,
-      successfulTrades: 0,
-      rating: 0,
-      totalReviews: 0,
-    },
-  };
-
-  // Add to shared storage so username is globally unique
-  addSharedUser(newUser);
-
-  // Auto-login the new user
-  currentUserId = userId;
-  setCurrentUserId(userId);
-
-  // Convert to public user format
-  const publicUser: User = {
-    id: newUser.id,
-    username: newUser.username,
-    displayName: newUser.displayName,
-    avatar: newUser.avatar,
-    robloxId: newUser.robloxId,
-    joinDate: newUser.joinDate,
-    isOnline: newUser.isOnline,
-    stats: newUser.stats,
-  };
-
-  return {
-    success: true,
-    message: "Account created successfully!",
-    user: publicUser,
-  };
 }
 
 // Login user
-export function loginUser(data: LoginData): AuthResult {
-  if (!data.username || !data.password) {
+export async function loginUser(data: LoginData): Promise<AuthResult> {
+  try {
+    const response = await authAPI.login(data);
+
+    if (response.success && response.user) {
+      // Convert response dates to Date objects
+      const user: User = {
+        ...response.user,
+        joinDate: new Date(response.user.joinDate),
+      };
+
+      // Cache the user
+      currentUserCache = user;
+
+      return {
+        success: true,
+        message: response.message,
+        user,
+      };
+    }
+
     return {
       success: false,
-      message: "Please enter both username and password",
+      message: response.message,
+    };
+  } catch (error) {
+    console.error("Login error:", error);
+    return {
+      success: false,
+      message: error instanceof Error ? error.message : "Login failed",
     };
   }
-
-  // Find user in shared storage
-  const user = findSharedUser(data.username);
-  if (!user) {
-    return { success: false, message: "Invalid username or password" };
-  }
-
-  // Check password
-  const passwordHash = simpleHash(data.password);
-  if (passwordHash !== user.passwordHash) {
-    return { success: false, message: "Invalid username or password" };
-  }
-
-  // Login successful
-  currentUserId = user.id;
-  setCurrentUserId(user.id);
-
-  // Update user online status in shared storage
-  updateSharedUser(user.id, { isOnline: true });
-
-  // Convert to public user format
-  const publicUser: User = {
-    id: user.id,
-    username: user.username,
-    displayName: user.displayName,
-    avatar: user.avatar,
-    robloxId: user.robloxId,
-    joinDate: user.joinDate,
-    isOnline: user.isOnline,
-    stats: user.stats,
-  };
-
-  return {
-    success: true,
-    message: "Login successful!",
-    user: publicUser,
-  };
 }
 
-// Get current user (from shared storage)
-export function getCurrentUser(): User | null {
-  const userId = getCurrentUserId();
-  if (!userId) return null;
+// Get current user
+export async function getCurrentUser(): Promise<User | null> {
+  // Return cached user if available
+  if (currentUserCache) {
+    return currentUserCache;
+  }
 
-  const sharedUsers = getSharedUsers();
-  const user = sharedUsers.find((u) => u.id === userId);
-  if (!user) return null;
+  try {
+    const response = await authAPI.getCurrentUser();
+    if (response.success && response.user) {
+      const user: User = {
+        ...response.user,
+        joinDate: new Date(response.user.joinDate),
+      };
+      currentUserCache = user;
+      return user;
+    }
+  } catch (error) {
+    console.error("Get current user error:", error);
+    // Clear invalid token if user not found
+    currentUserCache = null;
+  }
 
-  return {
-    id: user.id,
-    username: user.username,
-    displayName: user.displayName,
-    avatar: user.avatar,
-    robloxId: user.robloxId,
-    joinDate: user.joinDate,
-    isOnline: user.isOnline,
-    stats: user.stats,
-  };
+  return null;
+}
+
+// Get current user synchronously (for cases where we need immediate access)
+export function getCurrentUserSync(): User | null {
+  return currentUserCache;
 }
 
 // Logout user
-export function logoutUser(): void {
-  const userId = getCurrentUserId();
-  if (userId) {
-    // Update user online status in shared storage
-    updateSharedUser(userId, { isOnline: false });
+export async function logoutUser(): Promise<void> {
+  try {
+    await authAPI.logout();
+  } catch (error) {
+    console.error("Logout error:", error);
+  } finally {
+    currentUserCache = null;
   }
-  currentUserId = null;
-  setCurrentUserId(null);
 }
 
 // Check if user is logged in
 export function isLoggedIn(): boolean {
-  return getCurrentUserId() !== null;
+  return localStorage.getItem("tradehub_token") !== null;
 }
 
 // Get all users (for admin purposes or user lists)
-export function getAllUsers(): User[] {
-  const sharedUsers = getSharedUsers();
-  return sharedUsers.map((user) => ({
-    id: user.id,
-    username: user.username,
-    displayName: user.displayName,
-    avatar: user.avatar,
-    robloxId: user.robloxId,
-    joinDate: user.joinDate,
-    isOnline: user.isOnline,
-    stats: user.stats,
-  }));
+export async function getAllUsers(): Promise<User[]> {
+  try {
+    const response = await usersAPI.getAllUsers();
+    if (response.success) {
+      return response.users.map((user: any) => ({
+        ...user,
+        joinDate: new Date(user.joinDate),
+      }));
+    }
+  } catch (error) {
+    console.error("Get all users error:", error);
+  }
+  return [];
+}
+
+// Get user by ID
+export async function getUserById(userId: string): Promise<User | null> {
+  try {
+    const response = await usersAPI.getUserById(userId);
+    if (response.success && response.user) {
+      return {
+        ...response.user,
+        joinDate: new Date(response.user.joinDate),
+      };
+    }
+  } catch (error) {
+    console.error("Get user by ID error:", error);
+  }
+  return null;
 }
 
 // Update user stats (for trading activities)
-export function updateUserStats(
+export async function updateUserStats(
   userId: string,
   updates: Partial<User["stats"]>,
-): void {
-  const sharedUsers = getSharedUsers();
-  const user = sharedUsers.find((u) => u.id === userId);
-  if (user) {
-    const updatedStats = { ...user.stats, ...updates };
-    updateSharedUser(userId, { stats: updatedStats });
+): Promise<void> {
+  try {
+    await usersAPI.updateUserStats(userId, updates);
+
+    // Update cache if it's the current user
+    if (currentUserCache && currentUserCache.id === userId) {
+      currentUserCache.stats = { ...currentUserCache.stats, ...updates };
+    }
+  } catch (error) {
+    console.error("Update user stats error:", error);
   }
 }
 
-// Initialize auth system with shared storage
+// Initialize auth system
 export function initializeAuth(): void {
-  // Migrate any existing personal users to shared storage
-  migratePersonalUsersToShared();
+  // Initialize API with existing token
+  initializeAPI();
 
-  // Load users from shared storage
-  users = getSharedUsers();
-  currentUserId = getCurrentUserId();
+  // Try to load current user if token exists
+  if (isLoggedIn()) {
+    getCurrentUser().catch(() => {
+      // Token is invalid, clear it
+      currentUserCache = null;
+    });
+  }
 
-  console.log("Auth initialized. Total users:", users.length);
-
-  // No pre-created accounts - users must register themselves
+  console.log("Auth initialized");
 }
