@@ -179,7 +179,7 @@ export function registerUser(data: RegisterData): AuthResult {
     stats: {
       totalTrades: 0,
       successfulTrades: 0,
-      rating: 5.0,
+      rating: 0,
       totalReviews: 0,
     },
   };
@@ -335,27 +335,5 @@ export function initializeAuth(): void {
   users = getStoredUsers();
   currentUserId = getCurrentUserId();
 
-  // Create a demo admin account if no users exist
-  if (users.length === 0) {
-    const adminUser: StoredUser = {
-      id: "admin_123",
-      username: "admin",
-      displayName: "TradeHub Admin",
-      email: "admin@tradehub.com",
-      passwordHash: simpleHash("admin123"),
-      avatar: "/placeholder.svg",
-      robloxId: "roblox_admin",
-      joinDate: new Date("2024-01-01"),
-      isOnline: false,
-      stats: {
-        totalTrades: 500,
-        successfulTrades: 485,
-        rating: 4.9,
-        totalReviews: 234,
-      },
-    };
-
-    users.push(adminUser);
-    saveUsers(users);
-  }
+  // No pre-created accounts - users must register themselves
 }
