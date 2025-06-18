@@ -216,7 +216,7 @@ export function RegisterModal({
             {formData.username && !errors.username && (
               <p className="text-sm text-trading-success flex items-center space-x-1">
                 <CheckCircle className="h-3 w-3" />
-                <span>Username is available</span>
+                <span>Username is available globally</span>
               </p>
             )}
           </div>
