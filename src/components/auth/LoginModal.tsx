@@ -118,21 +118,6 @@ export function LoginModal({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Demo Account Info */}
-          <div className="p-3 bg-muted/30 rounded-lg border border-trading-primary/20">
-            <p className="text-sm font-medium mb-2 text-trading-primary">
-              Demo Account:
-            </p>
-            <div className="text-xs space-y-1 text-muted-foreground">
-              <p>
-                <strong>Username:</strong> admin
-              </p>
-              <p>
-                <strong>Password:</strong> admin123
-              </p>
-            </div>
-          </div>
-
           {/* Username */}
           <div className="space-y-2">
             <Label htmlFor="username" className="flex items-center space-x-2">
