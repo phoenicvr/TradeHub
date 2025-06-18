@@ -123,6 +123,13 @@ export const getUnreadNotificationCount = (userId?: string): number => {
   ).length;
 };
 
+export const markNotificationAsRead = (notificationId: string): void => {
+  const notification = notifications.find((n) => n.id === notificationId);
+  if (notification) {
+    notification.isRead = true;
+  }
+};
+
 export const markAllNotificationsAsRead = (userId?: string): void => {
   const currentUser = getCurrentUser();
   const targetUserId = userId || currentUser?.id;
