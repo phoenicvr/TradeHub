@@ -1,7 +1,8 @@
 import { TradePost } from "./types";
 
 // For demo purposes, we'll simulate a shared database by using a global storage key
-// In a real app, this would be a server API
+// This allows all users on the same browser to see each other's trades
+// In a real app, this would be a server API with a proper database
 
 const SHARED_TRADES_KEY = "tradehub_global_trades";
 
