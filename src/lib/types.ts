@@ -2,9 +2,10 @@ export type ItemRarity =
   | "common"
   | "uncommon"
   | "rare"
-  | "epic"
   | "legendary"
-  | "mythic";
+  | "mythical"
+  | "divine"
+  | "prismatic";
 
 export interface Item {
   id: string;
