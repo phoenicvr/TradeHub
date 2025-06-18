@@ -1,4 +1,13 @@
 import { User } from "./types";
+import {
+  getSharedUsers,
+  addSharedUser,
+  isSharedUsernameAvailable,
+  isSharedEmailAvailable,
+  findSharedUser,
+  updateSharedUser,
+  migratePersonalUsersToShared,
+} from "./shared-storage";
 
 // Simple hash function for demo purposes (in production, use bcrypt or similar)
 function simpleHash(password: string): string {
@@ -104,20 +113,14 @@ export interface AuthResult {
   user?: User;
 }
 
-// Check if username is available
+// Check if username is available (uses shared storage)
 export function isUsernameAvailable(username: string): boolean {
-  const currentUsers = getStoredUsers();
-  return !currentUsers.some(
-    (user) => user.username.toLowerCase() === username.toLowerCase(),
-  );
+  return isSharedUsernameAvailable(username);
 }
 
-// Check if email is available
+// Check if email is available (uses shared storage)
 export function isEmailAvailable(email: string): boolean {
-  const currentUsers = getStoredUsers();
-  return !currentUsers.some(
-    (user) => user.email.toLowerCase() === email.toLowerCase(),
-  );
+  return isSharedEmailAvailable(email);
 }
 
 // Register a new user
@@ -184,9 +187,8 @@ export function registerUser(data: RegisterData): AuthResult {
     },
   };
 
-  users = getStoredUsers();
-  users.push(newUser);
-  saveUsers(users);
+  // Add to shared storage so username is globally unique
+  addSharedUser(newUser);
 
   // Auto-login the new user
   currentUserId = userId;
@@ -220,11 +222,8 @@ export function loginUser(data: LoginData): AuthResult {
     };
   }
 
-  // Find user
-  users = getStoredUsers();
-  const user = users.find(
-    (u) => u.username.toLowerCase() === data.username.toLowerCase(),
-  );
+  // Find user in shared storage
+  const user = findSharedUser(data.username);
   if (!user) {
     return { success: false, message: "Invalid username or password" };
   }
@@ -238,8 +237,9 @@ export function loginUser(data: LoginData): AuthResult {
   // Login successful
   currentUserId = user.id;
   setCurrentUserId(user.id);
-  user.isOnline = true;
-  saveUsers(users);
+
+  // Update user online status in shared storage
+  updateSharedUser(user.id, { isOnline: true });
 
   // Convert to public user format
   const publicUser: User = {
@@ -260,13 +260,13 @@ export function loginUser(data: LoginData): AuthResult {
   };
 }
 
-// Get current user
+// Get current user (from shared storage)
 export function getCurrentUser(): User | null {
   const userId = getCurrentUserId();
   if (!userId) return null;
 
-  const currentUsers = getStoredUsers();
-  const user = currentUsers.find((u) => u.id === userId);
+  const sharedUsers = getSharedUsers();
+  const user = sharedUsers.find((u) => u.id === userId);
   if (!user) return null;
 
   return {
@@ -285,12 +285,8 @@ export function getCurrentUser(): User | null {
 export function logoutUser(): void {
   const userId = getCurrentUserId();
   if (userId) {
-    const currentUsers = getStoredUsers();
-    const user = currentUsers.find((u) => u.id === userId);
-    if (user) {
-      user.isOnline = false;
-      saveUsers(currentUsers);
-    }
+    // Update user online status in shared storage
+    updateSharedUser(userId, { isOnline: false });
   }
   currentUserId = null;
   setCurrentUserId(null);
@@ -303,8 +299,8 @@ export function isLoggedIn(): boolean {
 
 // Get all users (for admin purposes or user lists)
 export function getAllUsers(): User[] {
-  const currentUsers = getStoredUsers();
-  return currentUsers.map((user) => ({
+  const sharedUsers = getSharedUsers();
+  return sharedUsers.map((user) => ({
     id: user.id,
     username: user.username,
     displayName: user.displayName,
@@ -321,19 +317,24 @@ export function updateUserStats(
   userId: string,
   updates: Partial<User["stats"]>,
 ): void {
-  const currentUsers = getStoredUsers();
-  const user = currentUsers.find((u) => u.id === userId);
+  const sharedUsers = getSharedUsers();
+  const user = sharedUsers.find((u) => u.id === userId);
   if (user) {
-    user.stats = { ...user.stats, ...updates };
-    saveUsers(currentUsers);
+    const updatedStats = { ...user.stats, ...updates };
+    updateSharedUser(userId, { stats: updatedStats });
   }
 }
 
-// Initialize with some demo accounts for testing
+// Initialize auth system with shared storage
 export function initializeAuth(): void {
-  // Load existing users from localStorage
-  users = getStoredUsers();
+  // Migrate any existing personal users to shared storage
+  migratePersonalUsersToShared();
+
+  // Load users from shared storage
+  users = getSharedUsers();
   currentUserId = getCurrentUserId();
+
+  console.log("Auth initialized. Total users:", users.length);
 
   // No pre-created accounts - users must register themselves
 }
