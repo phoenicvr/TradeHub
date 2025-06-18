@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -66,9 +67,12 @@ export function TradingCard({ trade }: TradingCardProps) {
             </Avatar>
             <div>
               <div className="flex items-center space-x-2">
-                <h3 className="font-semibold text-sm">
+                <Link
+                  to={`/user/${trade.author.id}`}
+                  className="font-semibold text-sm hover:text-trading-primary transition-colors"
+                >
                   {trade.author.displayName}
-                </h3>
+                </Link>
                 {trade.author.stats.totalReviews > 0 ? (
                   <div className="flex items-center space-x-1">
                     <Star className="h-3 w-3 fill-trading-warning text-trading-warning" />
@@ -82,9 +86,12 @@ export function TradingCard({ trade }: TradingCardProps) {
                   </span>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <Link
+                to={`/user/${trade.author.id}`}
+                className="text-xs text-muted-foreground hover:text-trading-primary transition-colors"
+              >
                 @{trade.author.username}
-              </p>
+              </Link>
             </div>
           </div>
           <div className="flex flex-col items-end space-y-1">
