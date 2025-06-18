@@ -229,7 +229,7 @@ export function TradingCard({ trade }: TradingCardProps) {
               >
                 #{tag}
               </Badge>
-          )}
+            ))}
         </div>
       </CardContent>
 
