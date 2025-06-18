@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Coins, Plus, ArrowRight, Filter } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { getUserTrades, isLoggedIn } from "@/lib/storage";
+import { getUserTrades } from "@/lib/storage";
+import { isLoggedIn } from "@/lib/auth";
 import { TradePost } from "@/lib/types";
 
 const MyTrades = () => {
