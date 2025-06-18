@@ -69,12 +69,18 @@ export function TradingCard({ trade }: TradingCardProps) {
                 <h3 className="font-semibold text-sm">
                   {trade.author.displayName}
                 </h3>
-                <div className="flex items-center space-x-1">
-                  <Star className="h-3 w-3 fill-trading-warning text-trading-warning" />
+                {trade.author.stats.totalReviews > 0 ? (
+                  <div className="flex items-center space-x-1">
+                    <Star className="h-3 w-3 fill-trading-warning text-trading-warning" />
+                    <span className="text-xs text-muted-foreground">
+                      {trade.author.stats.rating.toFixed(1)}
+                    </span>
+                  </div>
+                ) : (
                   <span className="text-xs text-muted-foreground">
-                    {trade.author.stats.rating}
+                    New trader
                   </span>
-                </div>
+                )}
               </div>
               <p className="text-xs text-muted-foreground">
                 @{trade.author.username}
