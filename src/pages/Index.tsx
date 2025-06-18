@@ -35,7 +35,7 @@ import { ItemRarity, TradePost } from "@/lib/types";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { getAllTrades, initializeStorage } from "@/lib/storage";
-import { initializeAuth } from "@/lib/auth";
+import { initializeAuth, getCurrentUser } from "@/lib/auth";
 import "@/lib/debug"; // Initialize debug utilities
 
 const Index = () => {
