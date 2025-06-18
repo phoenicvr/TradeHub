@@ -1,78 +1,6 @@
 import { TradePost, User, Item } from "./types";
-import { getCurrentUser as getAuthUser, isLoggedIn as checkAuth } from "./auth";
-import {
-  getSharedTrades,
-  addSharedTrade,
-  getSharedTradesByUser,
-  migratePersonalTradesToShared,
-} from "./shared-storage";
-
-// LocalStorage keys
-const TRADES_STORAGE_KEY = "tradehub_trades";
-const NOTIFICATIONS_STORAGE_KEY = "tradehub_notifications";
-
-// Get trades from localStorage
-function getStoredTrades(): TradePost[] {
-  try {
-    const stored = localStorage.getItem(TRADES_STORAGE_KEY);
-    if (stored) {
-      return JSON.parse(stored).map((trade: any) => ({
-        ...trade,
-        createdAt: new Date(trade.createdAt),
-        updatedAt: new Date(trade.updatedAt),
-        expiresAt: trade.expiresAt ? new Date(trade.expiresAt) : undefined,
-        author: {
-          ...trade.author,
-          joinDate: new Date(trade.author.joinDate),
-        },
-      }));
-    }
-  } catch (error) {
-    console.error("Error loading trades from localStorage:", error);
-  }
-  return [];
-}
-
-// Save trades to localStorage
-function saveTrades(trades: TradePost[]): void {
-  try {
-    localStorage.setItem(TRADES_STORAGE_KEY, JSON.stringify(trades));
-  } catch (error) {
-    console.error("Error saving trades to localStorage:", error);
-  }
-}
-
-// Get notifications from localStorage
-function getStoredNotifications(): Notification[] {
-  try {
-    const stored = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
-    if (stored) {
-      return JSON.parse(stored).map((notif: any) => ({
-        ...notif,
-        createdAt: new Date(notif.createdAt),
-      }));
-    }
-  } catch (error) {
-    console.error("Error loading notifications from localStorage:", error);
-  }
-  return [];
-}
-
-// Save notifications to localStorage
-function saveNotifications(notifications: Notification[]): void {
-  try {
-    localStorage.setItem(
-      NOTIFICATIONS_STORAGE_KEY,
-      JSON.stringify(notifications),
-    );
-  } catch (error) {
-    console.error("Error saving notifications to localStorage:", error);
-  }
-}
-
-// Initialize from localStorage
-let trades: TradePost[] = getStoredTrades();
-let notifications: Notification[] = getStoredNotifications();
+import { getCurrentUserSync, isLoggedIn as checkAuth } from "./auth";
+import { tradesAPI, notificationsAPI } from "./api";
 
 export interface Notification {
   id: string;
@@ -87,7 +15,7 @@ export interface Notification {
 
 // Auth functions - now use the real auth system
 export const getCurrentUser = (): User | null => {
-  return getAuthUser();
+  return getCurrentUserSync();
 };
 
 export const isLoggedIn = (): boolean => {
@@ -95,16 +23,28 @@ export const isLoggedIn = (): boolean => {
 };
 
 // Trade functions
-export const getAllTrades = (): TradePost[] => {
-  // Use shared storage so all users can see all trades
-  const allTrades = getSharedTrades();
-  console.log("Total trades in shared storage:", allTrades.length);
-  return [...allTrades].sort(
-    (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
-  );
+export const getAllTrades = async (): Promise<TradePost[]> => {
+  try {
+    const response = await tradesAPI.getAllTrades();
+    if (response.success) {
+      return response.trades.map((trade: any) => ({
+        ...trade,
+        createdAt: new Date(trade.createdAt),
+        updatedAt: new Date(trade.updatedAt),
+        expiresAt: trade.expiresAt ? new Date(trade.expiresAt) : undefined,
+        author: {
+          ...trade.author,
+          joinDate: new Date(trade.author.joinDate),
+        },
+      }));
+    }
+  } catch (error) {
+    console.error("Error fetching trades:", error);
+  }
+  return [];
 };
 
-export const createTrade = (tradeData: {
+export const createTrade = async (tradeData: {
   title: string;
   description: string;
   giving: Item[];
@@ -112,62 +52,64 @@ export const createTrade = (tradeData: {
   isUrgent?: boolean;
   expiryDays?: string;
   tags?: string[];
-}): TradePost | null => {
+}): Promise<TradePost | null> => {
   const user = getCurrentUser();
   if (!user) return null;
 
-  const expiresAt =
-    tradeData.expiryDays && tradeData.expiryDays !== "never"
-      ? new Date(
-          Date.now() + parseInt(tradeData.expiryDays) * 24 * 60 * 60 * 1000,
-        )
-      : undefined;
+  try {
+    const response = await tradesAPI.createTrade(tradeData);
+    if (response.success && response.trade) {
+      const trade: TradePost = {
+        ...response.trade,
+        createdAt: new Date(response.trade.createdAt),
+        updatedAt: new Date(response.trade.updatedAt),
+        expiresAt: response.trade.expiresAt
+          ? new Date(response.trade.expiresAt)
+          : undefined,
+        author: {
+          ...response.trade.author,
+          joinDate: new Date(response.trade.author.joinDate),
+        },
+      };
 
-  const newTrade: TradePost = {
-    id: `trade_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    author: user,
-    title: tradeData.title,
-    description: tradeData.description,
-    giving: tradeData.giving,
-    wanting: tradeData.wanting,
-    status: "active",
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    expiresAt,
-    isUrgent: tradeData.isUrgent || false,
-    tags: tradeData.tags || [],
-  };
+      console.log("Trade created:", trade.id, "by user:", user.username);
+      return trade;
+    }
+  } catch (error) {
+    console.error("Error creating trade:", error);
+  }
 
-  // Add to shared storage so all users can see it
-  addSharedTrade(newTrade);
-
-  console.log("Trade created:", newTrade.id, "by user:", user.username);
-  console.log("Total trades after creation:", getSharedTrades().length);
-
-  // Update the local trades variable for consistency
-  trades = getSharedTrades();
-
-  // Add a notification for the user who created the trade
-  addNotification(user.id, {
-    title: "Trade Posted Successfully!",
-    message: `Your trade "${tradeData.title}" is now live and visible to other traders.`,
-    type: "system",
-  });
-
-  return newTrade;
+  return null;
 };
 
-export const getUserTrades = (userId?: string): TradePost[] => {
+export const getUserTrades = async (userId?: string): Promise<TradePost[]> => {
   const currentUser = getCurrentUser();
   const targetUserId = userId || currentUser?.id;
   if (!targetUserId) return [];
 
-  // Use shared storage to get user trades
-  return getSharedTradesByUser(targetUserId);
+  try {
+    const response = await tradesAPI.getUserTrades(targetUserId);
+    if (response.success) {
+      return response.trades.map((trade: any) => ({
+        ...trade,
+        createdAt: new Date(trade.createdAt),
+        updatedAt: new Date(trade.updatedAt),
+        expiresAt: trade.expiresAt ? new Date(trade.expiresAt) : undefined,
+        author: {
+          ...trade.author,
+          joinDate: new Date(trade.author.joinDate),
+        },
+      }));
+    }
+  } catch (error) {
+    console.error("Error fetching user trades:", error);
+  }
+
+  return [];
 };
 
 // Notification functions
-export const addNotification = (
+export const addNotification = async (
   userId: string,
   notificationData: {
     title: string;
@@ -175,78 +117,79 @@ export const addNotification = (
     type: "trade" | "review" | "system";
     actionUrl?: string;
   },
-): void => {
-  const notification: Notification = {
-    id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    userId,
-    ...notificationData,
-    isRead: false,
-    createdAt: new Date(),
-  };
-
-  notifications = getStoredNotifications();
-  notifications.push(notification);
-  saveNotifications(notifications);
+): Promise<void> => {
+  try {
+    await notificationsAPI.addNotification({
+      userId,
+      ...notificationData,
+    });
+  } catch (error) {
+    console.error("Error adding notification:", error);
+  }
 };
 
-export const getUserNotifications = (userId?: string): Notification[] => {
+export const getUserNotifications = async (
+  userId?: string,
+): Promise<Notification[]> => {
   const currentUser = getCurrentUser();
   const targetUserId = userId || currentUser?.id;
   if (!targetUserId) return [];
 
-  const currentNotifications = getStoredNotifications();
-  return currentNotifications
-    .filter((notif) => notif.userId === targetUserId)
-    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  try {
+    const response = await notificationsAPI.getUserNotifications();
+    if (response.success) {
+      return response.notifications.map((notif: any) => ({
+        ...notif,
+        createdAt: new Date(notif.createdAt),
+      }));
+    }
+  } catch (error) {
+    console.error("Error fetching notifications:", error);
+  }
+
+  return [];
 };
 
-export const getUnreadNotificationCount = (userId?: string): number => {
+export const getUnreadNotificationCount = async (
+  userId?: string,
+): Promise<number> => {
   const currentUser = getCurrentUser();
   const targetUserId = userId || currentUser?.id;
   if (!targetUserId) return 0;
 
-  const currentNotifications = getStoredNotifications();
-  return currentNotifications.filter(
-    (notif) => notif.userId === targetUserId && !notif.isRead,
-  ).length;
+  try {
+    const response = await notificationsAPI.getUnreadCount();
+    if (response.success) {
+      return response.count;
+    }
+  } catch (error) {
+    console.error("Error fetching unread count:", error);
+  }
+
+  return 0;
 };
 
-export const markNotificationAsRead = (notificationId: string): void => {
-  notifications = getStoredNotifications();
-  const notification = notifications.find((n) => n.id === notificationId);
-  if (notification) {
-    notification.isRead = true;
-    saveNotifications(notifications);
+export const markNotificationAsRead = async (
+  notificationId: string,
+): Promise<void> => {
+  try {
+    await notificationsAPI.markAsRead(notificationId);
+  } catch (error) {
+    console.error("Error marking notification as read:", error);
   }
 };
 
-export const markAllNotificationsAsRead = (userId?: string): void => {
-  const currentUser = getCurrentUser();
-  const targetUserId = userId || currentUser?.id;
-  if (!targetUserId) return;
-
-  notifications = getStoredNotifications();
-  notifications.forEach((notif) => {
-    if (notif.userId === targetUserId) {
-      notif.isRead = true;
-    }
-  });
-  saveNotifications(notifications);
+export const markAllNotificationsAsRead = async (
+  userId?: string,
+): Promise<void> => {
+  try {
+    await notificationsAPI.markAllAsRead();
+  } catch (error) {
+    console.error("Error marking all notifications as read:", error);
+  }
 };
 
-// Initialize storage - migrate to shared system
+// Initialize storage - now uses backend API
 export const initializeStorage = (): void => {
-  // Migrate any existing personal trades to shared storage
-  migratePersonalTradesToShared();
-
-  // Load data from storage systems
-  trades = getSharedTrades();
-  notifications = getStoredNotifications();
-
-  console.log(
-    "Storage initialized. Trades:",
-    trades.length,
-    "Notifications:",
-    notifications.length,
-  );
+  console.log("Storage initialized with backend API");
 };
