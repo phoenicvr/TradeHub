@@ -90,7 +90,9 @@ export const isLoggedIn = (): boolean => {
 
 // Trade functions
 export const getAllTrades = (): TradePost[] => {
+  // Always get fresh data from localStorage
   const currentTrades = getStoredTrades();
+  console.log("Total trades in storage:", currentTrades.length);
   return [...currentTrades].sort(
     (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
   );
@@ -130,9 +132,16 @@ export const createTrade = (tradeData: {
     tags: tradeData.tags || [],
   };
 
-  trades = getStoredTrades();
-  trades.push(newTrade);
-  saveTrades(trades);
+  // Get current trades from storage
+  const currentTrades = getStoredTrades();
+  currentTrades.push(newTrade);
+  saveTrades(currentTrades);
+
+  console.log("Trade created:", newTrade.id, "by user:", user.username);
+  console.log("Total trades after creation:", currentTrades.length);
+
+  // Update the local trades variable for consistency
+  trades = currentTrades;
 
   // Add a notification for the user who created the trade
   addNotification(user.id, {
