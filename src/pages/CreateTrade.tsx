@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Navigation } from "@/components/navigation";
 import { ItemSelector } from "@/components/trading/ItemSelector";
@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { Item } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { createTrade, isLoggedIn } from "@/lib/storage";
 
 const CreateTrade = () => {
   const navigate = useNavigate();
@@ -40,6 +41,13 @@ const CreateTrade = () => {
   const [tags, setTags] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Check if user is logged in
+  useEffect(() => {
+    if (!isLoggedIn()) {
+      navigate("/");
+    }
+  }, [navigate]);
+
   const isFormValid =
     title.trim() !== "" &&
     description.trim() !== "" &&
@@ -48,15 +56,42 @@ const CreateTrade = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isFormValid) return;
+    if (!isFormValid || !isLoggedIn()) return;
 
     setIsSubmitting(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    try {
+      // Process tags
+      const processedTags = tags
+        .split(",")
+        .map((tag) => tag.trim().toLowerCase())
+        .filter((tag) => tag.length > 0);
 
-    // Navigate back to home page
-    navigate("/");
+      // Create the trade
+      const trade = createTrade({
+        title: title.trim(),
+        description: description.trim(),
+        giving: givingItems,
+        wanting: wantingItems,
+        isUrgent,
+        expiryDays,
+        tags: processedTags,
+      });
+
+      if (trade) {
+        // Simulate some processing time
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        // Navigate back to home page
+        navigate("/");
+      } else {
+        console.error("Failed to create trade");
+      }
+    } catch (error) {
+      console.error("Error creating trade:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handlePreview = () => {
