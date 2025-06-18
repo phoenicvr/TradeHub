@@ -28,7 +28,8 @@ import {
 } from "lucide-react";
 import { Item } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { createTrade, isLoggedIn } from "@/lib/storage";
+import { createTrade } from "@/lib/storage";
+import { isLoggedIn } from "@/lib/auth";
 
 const CreateTrade = () => {
   const navigate = useNavigate();
