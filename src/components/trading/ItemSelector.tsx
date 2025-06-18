@@ -44,9 +44,10 @@ export function ItemSelector({
     "common",
     "uncommon",
     "rare",
-    "epic",
     "legendary",
-    "mythic",
+    "mythical",
+    "divine",
+    "prismatic",
   ];
 
   const filteredItems = mockItems.filter((item) => {
