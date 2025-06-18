@@ -23,20 +23,18 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { LoginModal } from "@/components/LoginModal";
+import { LoginModal } from "@/components/auth/LoginModal";
+import { RegisterModal } from "@/components/auth/RegisterModal";
 import { NotificationsPanel } from "@/components/NotificationsPanel";
 import { cn } from "@/lib/utils";
-import {
-  getCurrentUser,
-  logout,
-  isLoggedIn,
-  getUnreadNotificationCount,
-} from "@/lib/storage";
+import { getCurrentUser, logoutUser, isLoggedIn } from "@/lib/auth";
+import { getUnreadNotificationCount } from "@/lib/storage";
 
 export function Navigation() {
   const location = useLocation();
   const [currentUser, setCurrentUser] = useState(getCurrentUser());
   const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const [registerModalOpen, setRegisterModalOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
   const refreshAuth = () => {
@@ -54,12 +52,22 @@ export function Navigation() {
   }, []);
 
   const handleLogout = () => {
-    logout();
+    logoutUser();
     refreshAuth();
   };
 
-  const handleLoginSuccess = () => {
+  const handleAuthSuccess = () => {
     refreshAuth();
+  };
+
+  const handleSwitchToRegister = () => {
+    setLoginModalOpen(false);
+    setRegisterModalOpen(true);
+  };
+
+  const handleSwitchToLogin = () => {
+    setRegisterModalOpen(false);
+    setLoginModalOpen(true);
   };
 
   const navItems = [
@@ -215,7 +223,15 @@ export function Navigation() {
         <LoginModal
           open={loginModalOpen}
           onOpenChange={setLoginModalOpen}
-          onLogin={handleLoginSuccess}
+          onSuccess={handleAuthSuccess}
+          onSwitchToRegister={handleSwitchToRegister}
+        />
+
+        <RegisterModal
+          open={registerModalOpen}
+          onOpenChange={setRegisterModalOpen}
+          onSuccess={handleAuthSuccess}
+          onSwitchToLogin={handleSwitchToLogin}
         />
       </div>
     </nav>
