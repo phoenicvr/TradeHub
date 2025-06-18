@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -112,9 +113,12 @@ export function TradeDetailsModal({
                 </Avatar>
                 <div className="flex-1">
                   <div className="flex items-center space-x-2">
-                    <h3 className="font-semibold">
+                    <Link
+                      to={`/user/${trade.author.id}`}
+                      className="font-semibold hover:text-trading-primary transition-colors"
+                    >
                       {trade.author.displayName}
-                    </h3>
+                    </Link>
                     {trade.author.stats.totalReviews > 0 ? (
                       <div className="flex items-center space-x-1">
                         <Star className="h-4 w-4 fill-trading-warning text-trading-warning" />
@@ -132,9 +136,14 @@ export function TradeDetailsModal({
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    @{trade.author.username} • {trade.author.stats.totalTrades}{" "}
-                    total trades • {trade.author.stats.successfulTrades}{" "}
-                    successful
+                    <Link
+                      to={`/user/${trade.author.id}`}
+                      className="hover:text-trading-primary transition-colors"
+                    >
+                      @{trade.author.username}
+                    </Link>{" "}
+                    • {trade.author.stats.totalTrades} total trades •{" "}
+                    {trade.author.stats.successfulTrades} successful
                   </p>
                   <div className="flex items-center space-x-4 mt-2 text-xs text-muted-foreground">
                     <div className="flex items-center space-x-1">
