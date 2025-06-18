@@ -1,9 +1,8 @@
 import { TradePost, User, Item } from "./types";
-import { mockUsers } from "./mock-data";
+import { getCurrentUser as getAuthUser, isLoggedIn as checkAuth } from "./auth";
 
 // Simple in-memory storage for demo purposes
 let trades: TradePost[] = [];
-let currentUserId: string | null = null;
 let notifications: Notification[] = [];
 
 export interface Notification {
@@ -17,33 +16,13 @@ export interface Notification {
   actionUrl?: string;
 }
 
-// Auth functions
+// Auth functions - now use the real auth system
 export const getCurrentUser = (): User | null => {
-  if (!currentUserId) return null;
-  return mockUsers.find((user) => user.id === currentUserId) || null;
-};
-
-export const login = (userId: string): User | null => {
-  const user = mockUsers.find((u) => u.id === userId);
-  if (user) {
-    currentUserId = userId;
-    // Add welcome notification
-    addNotification(userId, {
-      title: "Welcome back!",
-      message: `Welcome back to TradeHub, ${user.displayName}!`,
-      type: "system",
-    });
-    return user;
-  }
-  return null;
-};
-
-export const logout = (): void => {
-  currentUserId = null;
+  return getAuthUser();
 };
 
 export const isLoggedIn = (): boolean => {
-  return currentUserId !== null;
+  return checkAuth();
 };
 
 // Trade functions
@@ -89,23 +68,15 @@ export const createTrade = (tradeData: {
 
   trades.push(newTrade);
 
-  // Notify other users about new trade
-  mockUsers.forEach((otherUser) => {
-    if (otherUser.id !== user.id) {
-      addNotification(otherUser.id, {
-        title: "New Trade Available!",
-        message: `${user.displayName} posted a new trade: "${tradeData.title}"`,
-        type: "trade",
-        actionUrl: `/trade/${newTrade.id}`,
-      });
-    }
-  });
+  // For now, skip notifying other users since we don't have a user list
+  // In a real app, this would notify relevant users based on their interests
 
   return newTrade;
 };
 
 export const getUserTrades = (userId?: string): TradePost[] => {
-  const targetUserId = userId || currentUserId;
+  const currentUser = getCurrentUser();
+  const targetUserId = userId || currentUser?.id;
   if (!targetUserId) return [];
 
   return trades.filter((trade) => trade.author.id === targetUserId);
@@ -133,7 +104,8 @@ export const addNotification = (
 };
 
 export const getUserNotifications = (userId?: string): Notification[] => {
-  const targetUserId = userId || currentUserId;
+  const currentUser = getCurrentUser();
+  const targetUserId = userId || currentUser?.id;
   if (!targetUserId) return [];
 
   return notifications
@@ -142,7 +114,8 @@ export const getUserNotifications = (userId?: string): Notification[] => {
 };
 
 export const getUnreadNotificationCount = (userId?: string): number => {
-  const targetUserId = userId || currentUserId;
+  const currentUser = getCurrentUser();
+  const targetUserId = userId || currentUser?.id;
   if (!targetUserId) return 0;
 
   return notifications.filter(
@@ -150,15 +123,9 @@ export const getUnreadNotificationCount = (userId?: string): number => {
   ).length;
 };
 
-export const markNotificationAsRead = (notificationId: string): void => {
-  const notification = notifications.find((n) => n.id === notificationId);
-  if (notification) {
-    notification.isRead = true;
-  }
-};
-
 export const markAllNotificationsAsRead = (userId?: string): void => {
-  const targetUserId = userId || currentUserId;
+  const currentUser = getCurrentUser();
+  const targetUserId = userId || currentUser?.id;
   if (!targetUserId) return;
 
   notifications.forEach((notif) => {
@@ -168,10 +135,16 @@ export const markAllNotificationsAsRead = (userId?: string): void => {
   });
 };
 
-// Initialize storage - no dummy data, clean start
+  notifications.forEach((notif) => {
+    if (notif.userId === targetUserId) {
+      notif.isRead = true;
+    }
+  });
+};
+
+// Initialize storage - clean start
 export const initializeStorage = (): void => {
   // Just ensure storage is ready, no pre-populated data
   trades = [];
   notifications = [];
-  currentUserId = null;
 };
