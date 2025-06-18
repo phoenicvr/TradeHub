@@ -60,9 +60,10 @@
     --rarity-common: 0 0% 60%;
     --rarity-uncommon: 142 76% 36%;
     --rarity-rare: 221 83% 53%;
-    --rarity-epic: 263 70% 50%;
     --rarity-legendary: 48 96% 53%;
     --rarity-mythic: 0 100% 67%;
+    --rarity-divine: 280 100% 70%;
+    --rarity-prismatic: 310 100% 80%;
   }
 
   .dark {
@@ -114,9 +115,10 @@
     --rarity-common: 0 0% 60%;
     --rarity-uncommon: 142 76% 36%;
     --rarity-rare: 221 83% 53%;
-    --rarity-epic: 263 70% 50%;
     --rarity-legendary: 48 96% 53%;
     --rarity-mythic: 0 100% 67%;
+    --rarity-divine: 280 100% 70%;
+    --rarity-prismatic: 310 100% 80%;
   }
 }
 
