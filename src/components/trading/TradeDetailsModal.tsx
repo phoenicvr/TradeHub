@@ -115,15 +115,21 @@ export function TradeDetailsModal({
                     <h3 className="font-semibold">
                       {trade.author.displayName}
                     </h3>
-                    <div className="flex items-center space-x-1">
-                      <Star className="h-4 w-4 fill-trading-warning text-trading-warning" />
-                      <span className="text-sm font-medium">
-                        {trade.author.stats.rating}
-                      </span>
+                    {trade.author.stats.totalReviews > 0 ? (
+                      <div className="flex items-center space-x-1">
+                        <Star className="h-4 w-4 fill-trading-warning text-trading-warning" />
+                        <span className="text-sm font-medium">
+                          {trade.author.stats.rating.toFixed(1)}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          ({trade.author.stats.totalReviews} reviews)
+                        </span>
+                      </div>
+                    ) : (
                       <span className="text-sm text-muted-foreground">
-                        ({trade.author.stats.totalReviews} reviews)
+                        New trader
                       </span>
-                    </div>
+                    )}
                   </div>
                   <p className="text-sm text-muted-foreground">
                     @{trade.author.username} • {trade.author.stats.totalTrades}{" "}
