@@ -166,57 +166,52 @@ export function TradingCard({ trade }: TradingCardProps) {
         <Separator />
 
         {/* Footer */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4 text-xs text-muted-foreground">
-              <div className="flex items-center space-x-1">
-                <Calendar className="h-3 w-3" />
-                <span>{timeAgo}</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <Eye className="h-3 w-3" />
-                <span>Views</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <MessageSquare className="h-3 w-3" />
-                <span>Chat</span>
-              </div>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+            <div className="flex items-center space-x-1">
+              <Calendar className="h-3 w-3" />
+              <span>{timeAgo}</span>
             </div>
-
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8"
-                onClick={handleViewDetails}
-              >
-                <Eye className="h-3 w-3 mr-1" />
-                View Details
-              </Button>
-              {!isOwnTrade && currentUser ? (
-                <Button
-                  size="sm"
-                  className="h-8 bg-trading-gradient hover:opacity-90 transition-opacity"
-                  onClick={handleStartChat}
-                >
-                  <MessageSquare className="h-3 w-3 mr-1" />
-                  Start Chat
-                </Button>
-              ) : isOwnTrade ? (
-                <Badge variant="secondary" className="h-8 px-3">
-                  Your Trade
-                </Badge>
-              ) : (
-                <Button
-                  size="sm"
-                  className="h-8"
-                  variant="outline"
-                  disabled
-                >
-                  Login to Chat
-                </Button>
-              )}
+            <div className="flex items-center space-x-1">
+              <Eye className="h-3 w-3" />
+              <span>Views</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <MessageSquare className="h-3 w-3" />
+              <span>Chat</span>
             </div>
           </div>
+
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8"
+              onClick={handleViewDetails}
+            >
+              <Eye className="h-3 w-3 mr-1" />
+              View Details
+            </Button>
+            {!isOwnTrade && currentUser ? (
+              <Button
+                size="sm"
+                className="h-8 bg-trading-gradient hover:opacity-90 transition-opacity"
+                onClick={handleStartChat}
+              >
+                <MessageSquare className="h-3 w-3 mr-1" />
+                Start Chat
+              </Button>
+            ) : isOwnTrade ? (
+              <Badge variant="secondary" className="h-8 px-3">
+                Your Trade
+              </Badge>
+            ) : (
+              <Button size="sm" className="h-8" variant="outline" disabled>
+                Login to Chat
+              </Button>
+            )}
+          </div>
+        </div>
 
         {/* Tags */}
         {trade.tags && trade.tags.length > 0 && (
@@ -247,5 +242,4 @@ export function TradingCard({ trade }: TradingCardProps) {
       />
     </Card>
   );
-}
 }
