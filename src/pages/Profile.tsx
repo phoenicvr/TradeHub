@@ -322,6 +322,7 @@ const Profile = () => {
                             <Star
                               key={star}
                               className={`h-4 w-4 ${
+                                currentUser.stats.totalReviews > 0 &&
                                 star <= Math.round(currentUser.stats.rating)
                                   ? "fill-trading-warning text-trading-warning"
                                   : "text-muted-foreground"
@@ -330,7 +331,9 @@ const Profile = () => {
                           ))}
                         </div>
                         <span className="font-medium">
-                          {currentUser.stats.rating.toFixed(1)}
+                          {currentUser.stats.totalReviews > 0
+                            ? currentUser.stats.rating.toFixed(1)
+                            : "No ratings yet"}
                         </span>
                         <span className="text-muted-foreground">
                           ({currentUser.stats.totalReviews} reviews)
