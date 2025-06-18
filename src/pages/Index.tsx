@@ -35,6 +35,7 @@ import { ItemRarity, TradePost } from "@/lib/types";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { getAllTrades, initializeStorage } from "@/lib/storage";
+import { initializeAuth } from "@/lib/auth";
 
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -54,7 +55,8 @@ const Index = () => {
   ];
 
   useEffect(() => {
-    // Initialize storage with sample data on first load
+    // Initialize auth and storage systems
+    initializeAuth();
     initializeStorage();
     refreshTrades();
   }, []);
