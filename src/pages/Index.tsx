@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navigation } from "@/components/navigation";
 import { TradingCard } from "@/components/trading/TradingCard";
 import { Button } from "@/components/ui/button";
@@ -30,27 +30,40 @@ import {
   RefreshCw,
   Plus,
 } from "lucide-react";
-import { mockTradePosts, mockItems } from "@/lib/mock-data";
-import { ItemRarity } from "@/lib/types";
+import { mockUsers, mockItems } from "@/lib/mock-data";
+import { ItemRarity, TradePost } from "@/lib/types";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { getAllTrades, initializeStorage } from "@/lib/storage";
 
 const Index = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("newest");
   const [selectedRarities, setSelectedRarities] = useState<ItemRarity[]>([]);
   const [showUrgentOnly, setShowUrgentOnly] = useState(false);
+  const [trades, setTrades] = useState<TradePost[]>([]);
 
   const rarities: ItemRarity[] = [
     "common",
     "uncommon",
     "rare",
-    "epic",
     "legendary",
-    "mythic",
+    "mythical",
+    "divine",
+    "prismatic",
   ];
 
-  const filteredTrades = mockTradePosts
+  useEffect(() => {
+    // Initialize storage with sample data on first load
+    initializeStorage();
+    refreshTrades();
+  }, []);
+
+  const refreshTrades = () => {
+    setTrades(getAllTrades());
+  };
+
+  const filteredTrades = trades
     .filter((trade) => {
       const matchesSearch =
         trade.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -82,10 +95,10 @@ const Index = () => {
     });
 
   const stats = {
-    activeTrades: mockTradePosts.filter((t) => t.status === "active").length,
-    totalUsers: 1234,
-    completedToday: 45,
-    urgentTrades: mockTradePosts.filter((t) => t.isUrgent).length,
+    activeTrades: trades.filter((t) => t.status === "active").length,
+    totalUsers: mockUsers.length,
+    completedToday: 0, // Would be calculated from real data
+    urgentTrades: trades.filter((t) => t.isUrgent).length,
   };
 
   return (
@@ -166,7 +179,7 @@ const Index = () => {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Browse Trade Posts</span>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={refreshTrades}>
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Refresh
               </Button>
