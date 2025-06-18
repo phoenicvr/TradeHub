@@ -300,6 +300,20 @@ const Index = () => {
           ))}
         </div>
 
+        {/* Debug Info (remove in production) */}
+        {process.env.NODE_ENV === "development" && (
+          <Card className="p-4 bg-muted/30 border-dashed">
+            <h4 className="font-medium mb-2">Debug Info:</h4>
+            <div className="text-sm space-y-1">
+              <p>Total trades loaded: {trades.length}</p>
+              <p>Filtered trades shown: {filteredTrades.length}</p>
+              <p>
+                Current user: {getCurrentUser()?.username || "Not logged in"}
+              </p>
+            </div>
+          </Card>
+        )}
+
         {filteredTrades.length === 0 && (
           <Card className="p-12 text-center">
             <div className="space-y-4">
