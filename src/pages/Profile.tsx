@@ -184,7 +184,9 @@ const Profile = () => {
                     <div className="flex items-center justify-center space-x-1">
                       <Star className="h-5 w-5 fill-trading-warning text-trading-warning" />
                       <span className="text-2xl font-bold">
-                        {currentUser.stats.rating.toFixed(1)}
+                        {currentUser.stats.totalReviews > 0
+                          ? currentUser.stats.rating.toFixed(1)
+                          : "—"}
                       </span>
                     </div>
                     <p className="text-sm text-muted-foreground">Rating</p>
