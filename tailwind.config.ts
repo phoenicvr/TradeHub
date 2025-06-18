@@ -75,9 +75,10 @@ export default {
           common: "hsl(var(--rarity-common))",
           uncommon: "hsl(var(--rarity-uncommon))",
           rare: "hsl(var(--rarity-rare))",
-          epic: "hsl(var(--rarity-epic))",
           legendary: "hsl(var(--rarity-legendary))",
           mythic: "hsl(var(--rarity-mythic))",
+          divine: "hsl(var(--rarity-divine))",
+          prismatic: "hsl(var(--rarity-prismatic))",
         },
       },
       borderRadius: {
@@ -99,12 +100,14 @@ export default {
           "linear-gradient(135deg, hsl(var(--rarity-uncommon)), hsl(var(--rarity-uncommon) / 0.8))",
         "rarity-rare":
           "linear-gradient(135deg, hsl(var(--rarity-rare)), hsl(var(--rarity-rare) / 0.8))",
-        "rarity-epic":
-          "linear-gradient(135deg, hsl(var(--rarity-epic)), hsl(var(--rarity-epic) / 0.8))",
         "rarity-legendary":
           "linear-gradient(135deg, hsl(var(--rarity-legendary)), hsl(var(--rarity-legendary) / 0.8))",
         "rarity-mythic":
           "linear-gradient(135deg, hsl(var(--rarity-mythic)), hsl(var(--rarity-mythic) / 0.8))",
+        "rarity-divine":
+          "linear-gradient(135deg, hsl(var(--rarity-divine)), hsl(var(--rarity-divine) / 0.8))",
+        "rarity-prismatic":
+          "linear-gradient(135deg, hsl(var(--rarity-prismatic)), hsl(var(--rarity-prismatic) / 0.8))",
       },
       boxShadow: {
         glow: "0 0 20px hsl(var(--trading-accent) / 0.5)",
