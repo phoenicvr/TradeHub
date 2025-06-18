@@ -1,5 +1,11 @@
 import { TradePost, User, Item } from "./types";
 import { getCurrentUser as getAuthUser, isLoggedIn as checkAuth } from "./auth";
+import {
+  getSharedTrades,
+  addSharedTrade,
+  getSharedTradesByUser,
+  migratePersonalTradesToShared,
+} from "./shared-storage";
 
 // LocalStorage keys
 const TRADES_STORAGE_KEY = "tradehub_trades";
@@ -90,10 +96,10 @@ export const isLoggedIn = (): boolean => {
 
 // Trade functions
 export const getAllTrades = (): TradePost[] => {
-  // Always get fresh data from localStorage
-  const currentTrades = getStoredTrades();
-  console.log("Total trades in storage:", currentTrades.length);
-  return [...currentTrades].sort(
+  // Use shared storage so all users can see all trades
+  const allTrades = getSharedTrades();
+  console.log("Total trades in shared storage:", allTrades.length);
+  return [...allTrades].sort(
     (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
   );
 };
@@ -132,16 +138,14 @@ export const createTrade = (tradeData: {
     tags: tradeData.tags || [],
   };
 
-  // Get current trades from storage
-  const currentTrades = getStoredTrades();
-  currentTrades.push(newTrade);
-  saveTrades(currentTrades);
+  // Add to shared storage so all users can see it
+  addSharedTrade(newTrade);
 
   console.log("Trade created:", newTrade.id, "by user:", user.username);
-  console.log("Total trades after creation:", currentTrades.length);
+  console.log("Total trades after creation:", getSharedTrades().length);
 
   // Update the local trades variable for consistency
-  trades = currentTrades;
+  trades = getSharedTrades();
 
   // Add a notification for the user who created the trade
   addNotification(user.id, {
@@ -158,8 +162,8 @@ export const getUserTrades = (userId?: string): TradePost[] => {
   const targetUserId = userId || currentUser?.id;
   if (!targetUserId) return [];
 
-  const currentTrades = getStoredTrades();
-  return currentTrades.filter((trade) => trade.author.id === targetUserId);
+  // Use shared storage to get user trades
+  return getSharedTradesByUser(targetUserId);
 };
 
 // Notification functions
@@ -230,9 +234,19 @@ export const markAllNotificationsAsRead = (userId?: string): void => {
   saveNotifications(notifications);
 };
 
-// Initialize storage - load from localStorage
+// Initialize storage - migrate to shared system
 export const initializeStorage = (): void => {
-  // Load existing data from localStorage
-  trades = getStoredTrades();
+  // Migrate any existing personal trades to shared storage
+  migratePersonalTradesToShared();
+
+  // Load data from storage systems
+  trades = getSharedTrades();
   notifications = getStoredNotifications();
+
+  console.log(
+    "Storage initialized. Trades:",
+    trades.length,
+    "Notifications:",
+    notifications.length,
+  );
 };
