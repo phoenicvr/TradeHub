@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,24 +9,41 @@ import {
   ArrowRightLeft,
   Star,
   Eye,
-  MessageCircle,
+  MessageSquare,
   Zap,
   Calendar,
 } from "lucide-react";
 import { TradePost } from "@/lib/types";
 import { getRarityColor, getRarityBorder } from "@/lib/mock-data";
+import { getCurrentUser } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
+import { TradeDetailsModal } from "./TradeDetailsModal";
+import { TradeChatModal } from "./TradeChatModal";
 
 interface TradingCardProps {
   trade: TradePost;
 }
 
 export function TradingCard({ trade }: TradingCardProps) {
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+  const currentUser = getCurrentUser();
+  const isOwnTrade = currentUser?.id === trade.author.id;
+
   const timeAgo = formatDistanceToNow(trade.createdAt, { addSuffix: true });
   const isExpiringSoon =
     trade.expiresAt &&
     new Date(trade.expiresAt).getTime() - Date.now() < 24 * 60 * 60 * 1000; // 24 hours
+
+  const handleViewDetails = () => {
+    setDetailsOpen(true);
+  };
+
+  const handleStartChat = () => {
+    if (!currentUser || isOwnTrade) return;
+    setChatOpen(true);
+  };
 
   return (
     <Card
@@ -149,34 +166,57 @@ export function TradingCard({ trade }: TradingCardProps) {
         <Separator />
 
         {/* Footer */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4 text-xs text-muted-foreground">
-            <div className="flex items-center space-x-1">
-              <Calendar className="h-3 w-3" />
-              <span>{timeAgo}</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+              <div className="flex items-center space-x-1">
+                <Calendar className="h-3 w-3" />
+                <span>{timeAgo}</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <Eye className="h-3 w-3" />
+                <span>Views</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <MessageSquare className="h-3 w-3" />
+                <span>Chat</span>
+              </div>
             </div>
-            <div className="flex items-center space-x-1">
-              <Eye className="h-3 w-3" />
-              <span>24</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <MessageCircle className="h-3 w-3" />
-              <span>3</span>
-            </div>
-          </div>
 
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm" className="h-8">
-              View Details
-            </Button>
-            <Button
-              size="sm"
-              className="h-8 bg-trading-gradient hover:opacity-90 transition-opacity"
-            >
-              Make Offer
-            </Button>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8"
+                onClick={handleViewDetails}
+              >
+                <Eye className="h-3 w-3 mr-1" />
+                View Details
+              </Button>
+              {!isOwnTrade && currentUser ? (
+                <Button
+                  size="sm"
+                  className="h-8 bg-trading-gradient hover:opacity-90 transition-opacity"
+                  onClick={handleStartChat}
+                >
+                  <MessageSquare className="h-3 w-3 mr-1" />
+                  Start Chat
+                </Button>
+              ) : isOwnTrade ? (
+                <Badge variant="secondary" className="h-8 px-3">
+                  Your Trade
+                </Badge>
+              ) : (
+                <Button
+                  size="sm"
+                  className="h-8"
+                  variant="outline"
+                  disabled
+                >
+                  Login to Chat
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
 
         {/* Tags */}
         {trade.tags && trade.tags.length > 0 && (
@@ -189,10 +229,22 @@ export function TradingCard({ trade }: TradingCardProps) {
               >
                 #{tag}
               </Badge>
-            ))}
-          </div>
-        )}
+          )}
+        </div>
       </CardContent>
+
+      <TradeDetailsModal
+        trade={trade}
+        open={detailsOpen}
+        onOpenChange={setDetailsOpen}
+      />
+
+      <TradeChatModal
+        trade={trade}
+        open={chatOpen}
+        onOpenChange={setChatOpen}
+      />
     </Card>
   );
+}
 }
