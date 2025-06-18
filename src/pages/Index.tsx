@@ -63,7 +63,9 @@ const Index = () => {
   }, []);
 
   const refreshTrades = () => {
-    setTrades(getAllTrades());
+    const allTrades = getAllTrades();
+    console.log("Refreshing trades, found:", allTrades.length);
+    setTrades(allTrades);
   };
 
   const filteredTrades = trades
