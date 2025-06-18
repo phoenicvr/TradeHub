@@ -230,7 +230,8 @@ export function TradingCard({ trade }: TradingCardProps) {
                 #{tag}
               </Badge>
             ))}
-        </div>
+          </div>
+        )}
       </CardContent>
 
       <TradeDetailsModal
