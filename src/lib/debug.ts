@@ -55,10 +55,24 @@ export function getStorageInfo(): void {
   );
 }
 
+export function clearTrades(): void {
+  localStorage.removeItem("tradehub_global_trades");
+  console.log("All trades cleared from shared storage");
+}
+
+export function clearUsers(): void {
+  localStorage.removeItem("tradehub_global_users");
+  localStorage.removeItem("tradehub_users");
+  localStorage.removeItem("tradehub_current_user");
+  console.log("All users cleared from storage");
+}
+
 // Make these available globally for debugging
 if (typeof window !== "undefined") {
   (window as any).tradeHubDebug = {
     clearAllData,
+    clearTrades,
+    clearUsers,
     exportData,
     getStorageInfo,
   };
