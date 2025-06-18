@@ -627,9 +627,10 @@ export const getRarityColor = (rarity: ItemRarity): string => {
     common: "text-rarity-common",
     uncommon: "text-rarity-uncommon",
     rare: "text-rarity-rare",
-    epic: "text-rarity-epic",
     legendary: "text-rarity-legendary",
-    mythic: "text-rarity-mythic",
+    mythical: "text-rarity-mythic",
+    divine: "text-rarity-divine",
+    prismatic: "text-rarity-prismatic",
   };
   return rarityColors[rarity];
 };
@@ -639,9 +640,10 @@ export const getRarityBorder = (rarity: ItemRarity): string => {
     common: "border-rarity-common",
     uncommon: "border-rarity-uncommon",
     rare: "border-rarity-rare",
-    epic: "border-rarity-epic",
     legendary: "border-rarity-legendary",
-    mythic: "border-rarity-mythic",
+    mythical: "border-rarity-mythic",
+    divine: "border-rarity-divine",
+    prismatic: "border-rarity-prismatic",
   };
   return rarityBorders[rarity];
 };
@@ -651,9 +653,10 @@ export const getRarityGradient = (rarity: ItemRarity): string => {
     common: "bg-rarity-common",
     uncommon: "bg-rarity-uncommon",
     rare: "bg-rarity-rare",
-    epic: "bg-rarity-epic",
     legendary: "bg-rarity-legendary",
-    mythic: "bg-rarity-mythic",
+    mythical: "bg-rarity-mythic",
+    divine: "bg-rarity-divine",
+    prismatic: "bg-rarity-prismatic",
   };
   return rarityGradients[rarity];
 };
