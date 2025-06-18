@@ -174,12 +174,14 @@ export function Navigation() {
                       <p className="text-xs leading-none text-muted-foreground">
                         @{currentUser.username}
                       </p>
-                      <div className="flex items-center space-x-1 pt-1">
-                        <Star className="h-3 w-3 fill-trading-warning text-trading-warning" />
-                        <span className="text-xs font-medium">
-                          {currentUser.stats.rating}
-                        </span>
-                      </div>
+                      {currentUser.stats.totalReviews > 0 && (
+                        <div className="flex items-center space-x-1 pt-1">
+                          <Star className="h-3 w-3 fill-trading-warning text-trading-warning" />
+                          <span className="text-xs font-medium">
+                            {currentUser.stats.rating.toFixed(1)}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
