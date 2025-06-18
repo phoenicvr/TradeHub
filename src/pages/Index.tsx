@@ -30,7 +30,7 @@ import {
   RefreshCw,
   Plus,
 } from "lucide-react";
-import { mockUsers, mockItems } from "@/lib/mock-data";
+import { mockUsers } from "@/lib/mock-data";
 import { ItemRarity, TradePost } from "@/lib/types";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
