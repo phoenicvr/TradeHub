@@ -5,13 +5,15 @@ export function clearAllData(): void {
   localStorage.removeItem("tradehub_current_user");
   localStorage.removeItem("tradehub_trades");
   localStorage.removeItem("tradehub_notifications");
-  localStorage.removeItem("tradehub_global_trades"); // New shared trades storage
+  localStorage.removeItem("tradehub_global_trades"); // Shared trades storage
+  localStorage.removeItem("tradehub_global_users"); // Shared users storage
   console.log("All TradeHub data cleared from localStorage");
 }
 
 export function exportData(): void {
   const data = {
-    users: localStorage.getItem("tradehub_users"),
+    personalUsers: localStorage.getItem("tradehub_users"),
+    sharedUsers: localStorage.getItem("tradehub_global_users"),
     currentUser: localStorage.getItem("tradehub_current_user"),
     personalTrades: localStorage.getItem("tradehub_trades"),
     sharedTrades: localStorage.getItem("tradehub_global_trades"),
@@ -22,14 +24,22 @@ export function exportData(): void {
 }
 
 export function getStorageInfo(): void {
-  const users = localStorage.getItem("tradehub_users");
+  const personalUsers = localStorage.getItem("tradehub_users");
+  const sharedUsers = localStorage.getItem("tradehub_global_users");
   const currentUser = localStorage.getItem("tradehub_current_user");
   const personalTrades = localStorage.getItem("tradehub_trades");
   const sharedTrades = localStorage.getItem("tradehub_global_trades");
   const notifications = localStorage.getItem("tradehub_notifications");
 
   console.log("Storage Info:");
-  console.log("- Users:", users ? JSON.parse(users).length : 0);
+  console.log(
+    "- Personal Users:",
+    personalUsers ? JSON.parse(personalUsers).length : 0,
+  );
+  console.log(
+    "- Shared Users:",
+    sharedUsers ? JSON.parse(sharedUsers).length : 0,
+  );
   console.log("- Current User:", currentUser || "None");
   console.log(
     "- Personal Trades:",
