@@ -29,9 +29,61 @@ interface StoredUser {
   };
 }
 
-// In-memory user storage (in production, this would be a database)
-let users: StoredUser[] = [];
-let currentUserId: string | null = null;
+// LocalStorage keys
+const USERS_STORAGE_KEY = "tradehub_users";
+const CURRENT_USER_STORAGE_KEY = "tradehub_current_user";
+
+// Get users from localStorage
+function getStoredUsers(): StoredUser[] {
+  try {
+    const stored = localStorage.getItem(USERS_STORAGE_KEY);
+    if (stored) {
+      return JSON.parse(stored).map((user: any) => ({
+        ...user,
+        joinDate: new Date(user.joinDate),
+      }));
+    }
+  } catch (error) {
+    console.error("Error loading users from localStorage:", error);
+  }
+  return [];
+}
+
+// Save users to localStorage
+function saveUsers(users: StoredUser[]): void {
+  try {
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+  } catch (error) {
+    console.error("Error saving users to localStorage:", error);
+  }
+}
+
+// Get current user ID from localStorage
+function getCurrentUserId(): string | null {
+  try {
+    return localStorage.getItem(CURRENT_USER_STORAGE_KEY);
+  } catch (error) {
+    console.error("Error loading current user from localStorage:", error);
+    return null;
+  }
+}
+
+// Save current user ID to localStorage
+function setCurrentUserId(userId: string | null): void {
+  try {
+    if (userId) {
+      localStorage.setItem(CURRENT_USER_STORAGE_KEY, userId);
+    } else {
+      localStorage.removeItem(CURRENT_USER_STORAGE_KEY);
+    }
+  } catch (error) {
+    console.error("Error saving current user to localStorage:", error);
+  }
+}
+
+// Initialize from localStorage
+let users: StoredUser[] = getStoredUsers();
+let currentUserId: string | null = getCurrentUserId();
 
 export interface RegisterData {
   username: string;
@@ -54,14 +106,16 @@ export interface AuthResult {
 
 // Check if username is available
 export function isUsernameAvailable(username: string): boolean {
-  return !users.some(
+  const currentUsers = getStoredUsers();
+  return !currentUsers.some(
     (user) => user.username.toLowerCase() === username.toLowerCase(),
   );
 }
 
 // Check if email is available
 export function isEmailAvailable(email: string): boolean {
-  return !users.some(
+  const currentUsers = getStoredUsers();
+  return !currentUsers.some(
     (user) => user.email.toLowerCase() === email.toLowerCase(),
   );
 }
@@ -130,10 +184,13 @@ export function registerUser(data: RegisterData): AuthResult {
     },
   };
 
+  users = getStoredUsers();
   users.push(newUser);
+  saveUsers(users);
 
   // Auto-login the new user
   currentUserId = userId;
+  setCurrentUserId(userId);
 
   // Convert to public user format
   const publicUser: User = {
@@ -164,6 +221,7 @@ export function loginUser(data: LoginData): AuthResult {
   }
 
   // Find user
+  users = getStoredUsers();
   const user = users.find(
     (u) => u.username.toLowerCase() === data.username.toLowerCase(),
   );
@@ -179,7 +237,9 @@ export function loginUser(data: LoginData): AuthResult {
 
   // Login successful
   currentUserId = user.id;
+  setCurrentUserId(user.id);
   user.isOnline = true;
+  saveUsers(users);
 
   // Convert to public user format
   const publicUser: User = {
@@ -202,9 +262,11 @@ export function loginUser(data: LoginData): AuthResult {
 
 // Get current user
 export function getCurrentUser(): User | null {
-  if (!currentUserId) return null;
+  const userId = getCurrentUserId();
+  if (!userId) return null;
 
-  const user = users.find((u) => u.id === currentUserId);
+  const currentUsers = getStoredUsers();
+  const user = currentUsers.find((u) => u.id === userId);
   if (!user) return null;
 
   return {
@@ -221,23 +283,28 @@ export function getCurrentUser(): User | null {
 
 // Logout user
 export function logoutUser(): void {
-  if (currentUserId) {
-    const user = users.find((u) => u.id === currentUserId);
+  const userId = getCurrentUserId();
+  if (userId) {
+    const currentUsers = getStoredUsers();
+    const user = currentUsers.find((u) => u.id === userId);
     if (user) {
       user.isOnline = false;
+      saveUsers(currentUsers);
     }
   }
   currentUserId = null;
+  setCurrentUserId(null);
 }
 
 // Check if user is logged in
 export function isLoggedIn(): boolean {
-  return currentUserId !== null;
+  return getCurrentUserId() !== null;
 }
 
 // Get all users (for admin purposes or user lists)
 export function getAllUsers(): User[] {
-  return users.map((user) => ({
+  const currentUsers = getStoredUsers();
+  return currentUsers.map((user) => ({
     id: user.id,
     username: user.username,
     displayName: user.displayName,
@@ -254,36 +321,41 @@ export function updateUserStats(
   userId: string,
   updates: Partial<User["stats"]>,
 ): void {
-  const user = users.find((u) => u.id === userId);
+  const currentUsers = getStoredUsers();
+  const user = currentUsers.find((u) => u.id === userId);
   if (user) {
     user.stats = { ...user.stats, ...updates };
+    saveUsers(currentUsers);
   }
 }
 
 // Initialize with some demo accounts for testing
 export function initializeAuth(): void {
-  // Clear existing data
-  users = [];
-  currentUserId = null;
+  // Load existing users from localStorage
+  users = getStoredUsers();
+  currentUserId = getCurrentUserId();
 
-  // Create a demo admin account
-  const adminUser: StoredUser = {
-    id: "admin_123",
-    username: "admin",
-    displayName: "TradeHub Admin",
-    email: "admin@tradehub.com",
-    passwordHash: simpleHash("admin123"),
-    avatar: "/placeholder.svg",
-    robloxId: "roblox_admin",
-    joinDate: new Date("2024-01-01"),
-    isOnline: false,
-    stats: {
-      totalTrades: 500,
-      successfulTrades: 485,
-      rating: 4.9,
-      totalReviews: 234,
-    },
-  };
+  // Create a demo admin account if no users exist
+  if (users.length === 0) {
+    const adminUser: StoredUser = {
+      id: "admin_123",
+      username: "admin",
+      displayName: "TradeHub Admin",
+      email: "admin@tradehub.com",
+      passwordHash: simpleHash("admin123"),
+      avatar: "/placeholder.svg",
+      robloxId: "roblox_admin",
+      joinDate: new Date("2024-01-01"),
+      isOnline: false,
+      stats: {
+        totalTrades: 500,
+        successfulTrades: 485,
+        rating: 4.9,
+        totalReviews: 234,
+      },
+    };
 
-  users.push(adminUser);
+    users.push(adminUser);
+    saveUsers(users);
+  }
 }
