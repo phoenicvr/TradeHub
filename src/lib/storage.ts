@@ -168,103 +168,10 @@ export const markAllNotificationsAsRead = (userId?: string): void => {
   });
 };
 
-// Initialize with some sample trades and notifications for demo
+// Initialize storage - no dummy data, clean start
 export const initializeStorage = (): void => {
-  // Start with user 1 logged in
-  login("1");
-
-  // Add some sample trades
-  createTrade({
-    title: "Trading Mythical Dragon Fruit for Divine Items",
-    description:
-      "Looking to upgrade my Dragon Fruit to something divine. Will consider multiple divine items!",
-    giving: [
-      {
-        id: "29",
-        name: "Dragon Fruit",
-        rarity: "mythical",
-        image: "/placeholder.svg",
-        category: "Fruits",
-        value: 750,
-      },
-    ],
-    wanting: [
-      {
-        id: "40",
-        name: "Grape",
-        rarity: "divine",
-        image: "/placeholder.svg",
-        category: "Fruits",
-        value: 1200,
-      },
-      {
-        id: "43",
-        name: "Cacao",
-        rarity: "divine",
-        image: "/placeholder.svg",
-        category: "Seeds",
-        value: 1400,
-      },
-    ],
-    isUrgent: true,
-    expiryDays: "7",
-    tags: ["mythical", "divine", "fruit", "upgrade"],
-  });
-
-  // Switch to user 2 and add their trade
-  login("2");
-  createTrade({
-    title: "Legendary Bundle for Mythical Items",
-    description:
-      "Trading multiple legendary plants for any mythical fruits. Great deal for collectors!",
-    giving: [
-      {
-        id: "19",
-        name: "Watermelon",
-        rarity: "legendary",
-        image: "/placeholder.svg",
-        category: "Fruits",
-        value: 300,
-      },
-      {
-        id: "22",
-        name: "Bamboo",
-        rarity: "legendary",
-        image: "/placeholder.svg",
-        category: "Plants",
-        value: 350,
-      },
-      {
-        id: "24",
-        name: "Lumira",
-        rarity: "legendary",
-        image: "/placeholder.svg",
-        category: "Flowers",
-        value: 400,
-      },
-    ],
-    wanting: [
-      {
-        id: "29",
-        name: "Dragon Fruit",
-        rarity: "mythical",
-        image: "/placeholder.svg",
-        category: "Fruits",
-        value: 750,
-      },
-      {
-        id: "31",
-        name: "Mango",
-        rarity: "mythical",
-        image: "/placeholder.svg",
-        category: "Fruits",
-        value: 680,
-      },
-    ],
-    expiryDays: "14",
-    tags: ["legendary", "mythical", "bundle", "collector"],
-  });
-
-  // Back to user 1
-  login("1");
+  // Just ensure storage is ready, no pre-populated data
+  trades = [];
+  notifications = [];
+  currentUserId = null;
 };
