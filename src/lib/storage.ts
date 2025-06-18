@@ -1,9 +1,72 @@
 import { TradePost, User, Item } from "./types";
 import { getCurrentUser as getAuthUser, isLoggedIn as checkAuth } from "./auth";
 
-// Simple in-memory storage for demo purposes
-let trades: TradePost[] = [];
-let notifications: Notification[] = [];
+// LocalStorage keys
+const TRADES_STORAGE_KEY = "tradehub_trades";
+const NOTIFICATIONS_STORAGE_KEY = "tradehub_notifications";
+
+// Get trades from localStorage
+function getStoredTrades(): TradePost[] {
+  try {
+    const stored = localStorage.getItem(TRADES_STORAGE_KEY);
+    if (stored) {
+      return JSON.parse(stored).map((trade: any) => ({
+        ...trade,
+        createdAt: new Date(trade.createdAt),
+        updatedAt: new Date(trade.updatedAt),
+        expiresAt: trade.expiresAt ? new Date(trade.expiresAt) : undefined,
+        author: {
+          ...trade.author,
+          joinDate: new Date(trade.author.joinDate),
+        },
+      }));
+    }
+  } catch (error) {
+    console.error("Error loading trades from localStorage:", error);
+  }
+  return [];
+}
+
+// Save trades to localStorage
+function saveTrades(trades: TradePost[]): void {
+  try {
+    localStorage.setItem(TRADES_STORAGE_KEY, JSON.stringify(trades));
+  } catch (error) {
+    console.error("Error saving trades to localStorage:", error);
+  }
+}
+
+// Get notifications from localStorage
+function getStoredNotifications(): Notification[] {
+  try {
+    const stored = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
+    if (stored) {
+      return JSON.parse(stored).map((notif: any) => ({
+        ...notif,
+        createdAt: new Date(notif.createdAt),
+      }));
+    }
+  } catch (error) {
+    console.error("Error loading notifications from localStorage:", error);
+  }
+  return [];
+}
+
+// Save notifications to localStorage
+function saveNotifications(notifications: Notification[]): void {
+  try {
+    localStorage.setItem(
+      NOTIFICATIONS_STORAGE_KEY,
+      JSON.stringify(notifications),
+    );
+  } catch (error) {
+    console.error("Error saving notifications to localStorage:", error);
+  }
+}
+
+// Initialize from localStorage
+let trades: TradePost[] = getStoredTrades();
+let notifications: Notification[] = getStoredNotifications();
 
 export interface Notification {
   id: string;
@@ -27,7 +90,8 @@ export const isLoggedIn = (): boolean => {
 
 // Trade functions
 export const getAllTrades = (): TradePost[] => {
-  return [...trades].sort(
+  const currentTrades = getStoredTrades();
+  return [...currentTrades].sort(
     (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
   );
 };
@@ -66,10 +130,16 @@ export const createTrade = (tradeData: {
     tags: tradeData.tags || [],
   };
 
+  trades = getStoredTrades();
   trades.push(newTrade);
+  saveTrades(trades);
 
-  // For now, skip notifying other users since we don't have a user list
-  // In a real app, this would notify relevant users based on their interests
+  // Add a notification for the user who created the trade
+  addNotification(user.id, {
+    title: "Trade Posted Successfully!",
+    message: `Your trade "${tradeData.title}" is now live and visible to other traders.`,
+    type: "system",
+  });
 
   return newTrade;
 };
@@ -79,7 +149,8 @@ export const getUserTrades = (userId?: string): TradePost[] => {
   const targetUserId = userId || currentUser?.id;
   if (!targetUserId) return [];
 
-  return trades.filter((trade) => trade.author.id === targetUserId);
+  const currentTrades = getStoredTrades();
+  return currentTrades.filter((trade) => trade.author.id === targetUserId);
 };
 
 // Notification functions
@@ -100,7 +171,9 @@ export const addNotification = (
     createdAt: new Date(),
   };
 
+  notifications = getStoredNotifications();
   notifications.push(notification);
+  saveNotifications(notifications);
 };
 
 export const getUserNotifications = (userId?: string): Notification[] => {
@@ -108,7 +181,8 @@ export const getUserNotifications = (userId?: string): Notification[] => {
   const targetUserId = userId || currentUser?.id;
   if (!targetUserId) return [];
 
-  return notifications
+  const currentNotifications = getStoredNotifications();
+  return currentNotifications
     .filter((notif) => notif.userId === targetUserId)
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 };
@@ -118,15 +192,18 @@ export const getUnreadNotificationCount = (userId?: string): number => {
   const targetUserId = userId || currentUser?.id;
   if (!targetUserId) return 0;
 
-  return notifications.filter(
+  const currentNotifications = getStoredNotifications();
+  return currentNotifications.filter(
     (notif) => notif.userId === targetUserId && !notif.isRead,
   ).length;
 };
 
 export const markNotificationAsRead = (notificationId: string): void => {
+  notifications = getStoredNotifications();
   const notification = notifications.find((n) => n.id === notificationId);
   if (notification) {
     notification.isRead = true;
+    saveNotifications(notifications);
   }
 };
 
@@ -135,16 +212,18 @@ export const markAllNotificationsAsRead = (userId?: string): void => {
   const targetUserId = userId || currentUser?.id;
   if (!targetUserId) return;
 
+  notifications = getStoredNotifications();
   notifications.forEach((notif) => {
     if (notif.userId === targetUserId) {
       notif.isRead = true;
     }
   });
+  saveNotifications(notifications);
 };
 
-// Initialize storage - clean start
+// Initialize storage - load from localStorage
 export const initializeStorage = (): void => {
-  // Just ensure storage is ready, no pre-populated data
-  trades = [];
-  notifications = [];
+  // Load existing data from localStorage
+  trades = getStoredTrades();
+  notifications = getStoredNotifications();
 };
